@@ -1,0 +1,327 @@
+% import transposed data
+filename = 'Data.xls';
+sheet = 1;
+xlrange = 'A1:HA552';
+Datam = xlsread(filename, sheet, xlrange, 'basic'); 
+[m n] = size(Datam)
+Datam = Datam';
+
+%calculate mean
+xbar = sum(Datam,2)/m;
+%disp(xbar)
+
+%calcualte covariance matrix S
+S2 = zeros(n);
+for i=1:m
+    S2 = S2 + (Datam(:,i) - xbar)*(Datam(:,i) - xbar)';
+end
+S = S2/(m-1);
+diagS = diag(S);
+
+%plot the original variance to see how much it differs between values
+% figure(1)
+% plot(diagS)
+% title('Plot for Original Variance Matrix')
+% xlabel('Index Value')
+% ylabel('diagS')
+
+%calculate eigenvectors and eigenvalues of S
+[E Lambda] = eig(S);
+%reaarange in descending order
+E = E(:, n:-1:1);
+Lambda = Lambda(n:-1:1, n:-1:1);
+
+%calulate MDL for lambda when n=1
+lambda = diag(Lambda);
+format long
+sample_size = 552;
+MDL = zeros(208,1);
+r=1;
+for h=0:208
+    a = mean(lambda(h+1:n));
+    g = geomean(lambda(h+1:n));
+    MDL(r) = sample_size*(n-h)*log(a/g)+h*(2*n-h)*log(sample_size)/2;
+    r=r+1;
+end
+
+%plot MDL
+ figure(2)
+ plot(0:208, MDL)
+ grid on
+ grid minor
+ title('MDL Plot for 552 Observations')
+ xlabel('Index Value')
+ ylabel('MDL')
+
+%create scree plot
+figure(3)
+plot(lambda(1:10))
+grid on
+grid minor
+title('Scree plot for Covariance Matrix')
+xlabel('Index Value')
+ylabel('Lambda')
+
+
+%create pareto plot
+figure(4)
+pareto(lambda)
+grid on
+grid minor
+title('Pareto plot for Covariance Matrix')
+xlabel('Index Value')
+ylabel('Lambda')
+
+
+%PCA for covariance matrix where the ith PC is yi=ei transpose*(x-xbar)
+PC1 = zeros(1,m);
+PC2 = zeros(1,m);
+PC3 = zeros(1,m);
+for i=1:m
+    PC1(i) = E(:,1)'*(Datam(:,i)-xbar);
+    PC2(i) = E(:,2)'*(Datam(:,i)-xbar);
+    PC3(i) = E(:,3)'*(Datam(:,i)-xbar);
+end
+UCL1 = 3*sqrt(Lambda(1,1));
+UCL2 = 3*sqrt(Lambda(2,2));
+UCL3 = 3*sqrt(Lambda(3,3));
+
+LCL1 = -3*sqrt(Lambda(1,1));
+LCL2 = -3*sqrt(Lambda(2,2));
+LCL3 = -3*sqrt(Lambda(3,3));
+
+%plot individual x-control charts
+figure(5)
+plot(1:m,PC1)
+hold on
+title('PC1')
+xlabel('Index')
+xL = get(gca,'XLim');
+line(xL,[UCL1 UCL1],'Color','r');
+line(xL,[LCL1 LCL1],'Color','r');
+hold off
+
+figure(6)
+plot(1:m,PC2)
+title('PC2')
+hold on
+title('PC2')
+xL = get(gca,'XLim');
+line(xL,[UCL2 UCL2],'Color','r');
+line(xL,[LCL2 LCL2],'Color','r');
+hold off
+
+figure(7)
+plot(1:m,PC3)
+title('PC3')
+hold on
+title('PC3')
+xL = get(gca,'XLim');
+line(xL,[UCL3 UCL3],'Color','r');
+line(xL,[LCL3 LCL3],'Color','r');
+hold off
+
+% figure(8)
+% plot(1:m,PC4)
+% title('PC4')
+% hold on
+% title('PC4')
+% xL = get(gca,'XLim');
+% line(xL,[UCL4 UCL4],'Color','r');
+% line(xL,[LCL4 LCL4],'Color','r');
+% hold off
+% 
+% figure(9)
+% plot(1:m,PC5)
+% title('PC5')
+% hold on
+% title('PC5')
+% xL = get(gca,'XLim');
+% line(xL,[UCL5 UCL5],'Color','r');
+% line(xL,[LCL5 LCL5],'Color','r');
+% hold off
+% 
+% figure(10)
+% plot(1:m,PC6)
+% title('PC6')
+% hold on
+% title('PC6')
+% xL = get(gca,'XLim');
+% line(xL,[UCL6 UCL6],'Color','r');
+% line(xL,[LCL6 LCL6],'Color','r');
+% hold off
+% 
+% figure(11)
+% plot(1:m,PC7)
+% title('PC7')
+% hold on
+% title('PC7')
+% xL = get(gca,'XLim');
+% line(xL,[UCL7 UCL7],'Color','r');
+% line(xL,[LCL7 LCL7],'Color','r');
+% hold off
+
+
+%calulate correlation matrix rho
+rho = zeros(209);
+for i = 1:209
+   for j=1:209
+      rho(i,j) = S(i,j)/sqrt(S(i,i)*S(j,j));
+   end
+end
+  
+%calculate eigen values of correltaion matrix rho
+[Ep Lambda_rho ] = eig(rho);
+ Ep = Ep(:, n:-1:1);
+ Lambda_rho = Lambda_rho(n:-1:1, n:-1:1);
+ lambda_rho = diag(Lambda_rho);
+ 
+%create scree plot
+figure(12)
+plot(lambda_rho(1:10))
+grid on
+grid minor
+title('Scree plot for Correlation Matrix')
+xlabel('Index Value')
+ylabel('Lambda_rho')
+
+%create pareto plot
+figure(13)
+pareto(lambda_rho)
+grid on
+grid minor
+title('Pareto plot for Correlation Matrix')
+xlabel('Index Value')
+ylabel('Lambda_rho')
+
+
+ %calulate MDL for lambda when n=1
+ 
+format long
+sample_size = 1;
+% MDL_rho = zeros(208,1);
+% r=1;
+% for h=0:208
+%     a = mean(lambda_rho(h+1:n));
+%     g = geomean(lambda_rho(h+1:n));
+%     MDL_rho(r) = sample_size*(n-h)*log(a/g)+h*(2*n-h)*log(sample_size)/2;
+%     r=r+1;
+% end
+
+ %calculate V^1/2 matrix
+ Vhalf = zeros(209);
+ for w=1:209
+     Vhalf(w,w)= 1/sqrt(S(w,w));
+ end
+ 
+ %PCA for correlation matrix where the ith PC is yi=ei transpose
+PC1p = zeros(1,m);
+PC2p = zeros(1,m);
+PC3p = zeros(1,m);
+PC4p = zeros(1,m);
+PC5p = zeros(1,m);
+ for w = 1:m
+     PC1p(w) = Ep(:,1)'*Vhalf*(Datam(:,w)-xbar);
+     PC2p(w) = Ep(:,2)'*Vhalf*(Datam(:,w)-xbar);
+     PC3p(w) = Ep(:,3)'*Vhalf*(Datam(:,w)-xbar);
+     PC4p(w) = Ep(:,4)'*Vhalf*(Datam(:,w)-xbar);
+     PC5p(w) = Ep(:,5)'*Vhalf*(Datam(:,w)-xbar);
+ end
+
+UCL1p = 3*sqrt(Lambda_rho(1,1));
+UCL2p = 3*sqrt(Lambda_rho(2,2));
+UCL3p = 3*sqrt(Lambda_rho(3,3));
+UCL4p = 3*sqrt(Lambda_rho(4,4));
+UCL5p = 3*sqrt(Lambda_rho(5,5));
+
+LCL1p = -3*sqrt(Lambda_rho(1,1));
+LCL2p = -3*sqrt(Lambda_rho(2,2));
+LCL3p = -3*sqrt(Lambda_rho(3,3));
+LCL4p = -3*sqrt(Lambda_rho(4,4));
+LCL5p = -3*sqrt(Lambda_rho(5,5));
+
+%plot individual x-control charts
+%figure(14)
+plot(1:m,PC1p)
+hold on
+title('PC1p')
+xlabel('Index')
+xL = get(gca,'XLim');
+line(xL,[UCL1p UCL1p],'Color','r');
+line(xL,[LCL1p LCL1p],'Color','r');
+hold off
+
+%figure(15)
+plot(1:m,PC2p)
+hold on
+title('PC2p')
+xL = get(gca,'XLim');
+line(xL,[UCL2p UCL2p],'Color','r');
+line(xL,[LCL2p LCL2p],'Color','r');
+hold off
+
+%figure(16)
+plot(1:m,PC3p)
+hold on
+title('PC3p')
+xL = get(gca,'XLim');
+line(xL,[UCL3p UCL3p],'Color','r');
+line(xL,[LCL3p LCL3p],'Color','r');
+hold off
+
+%figure(17)
+plot(1:m,PC4p)
+hold on
+title('PC4p')
+xL = get(gca,'XLim');
+line(xL,[UCL4p UCL4p],'Color','r');
+line(xL,[LCL4p LCL4p],'Color','r');
+hold off
+
+%figure(18)
+plot(1:m,PC5p)
+hold on
+title('PC5p')
+xL = get(gca,'XLim');
+line(xL,[UCL5p UCL5p],'Color','r');
+line(xL,[LCL5p LCL5p],'Color','r');
+hold off
+
+
+%calculate Hotelling T^2 for covariance matrix PCA reduction data
+%calcualte covariance matrix S_corr
+
+A = [PC1;PC2;PC3];
+B = horzcat(A(:,39:443),A(:,458:529),A(:,538:552));
+
+Bbar = sum(B,2)/492;
+B_cov = cov(B')
+B_cov_inv = inv(B_cov);
+UCL = chi2inv(0.95,3);
+
+
+J = 492;
+
+  
+    q=1;
+    
+    for j = 1:J
+        T = (B(:,j) - Bbar)'*B_cov_inv*(B(:,j) - Bbar);
+        if(T < UCL)
+            B2(:,q)=B(:,j);
+            q=q+1;
+        end
+    end
+    q = q-1
+    disp(q)    
+  J = q
+  
+  q=1;
+    
+    for j = 1:J
+        T = (B(:,j) - Bbar)'*B_cov_inv*(B(:,j) - Bbar);
+        if(T < UCL)
+            B3(:,q)=B2(:,j);
+            q=q+1;
+        end
+    end

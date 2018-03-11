@@ -1,0 +1,60 @@
+
+%Round 3 T square
+
+F = H(:,1:m);
+
+[LL L] = size(F);  
+Fbar = sum(F,2)/L;
+F3 = zeros(3);
+for i=1:L
+    F3 = F3 + (F(:,i) - Fbar)*(F(:,i) - Fbar)';
+end
+F_cov = F3/(L-1);
+F_cov_inv = inv(F_cov);
+
+
+UCL = chi2inv(0.995,3);
+
+check = 0;
+ii=30;
+while(check~=Fbar)
+    Fnew = zeros(3,J);
+    check = Fbar;
+    q=1;
+    for j = 1:L
+        T_F(j) = (F(:,j) - Fbar)'*F_cov_inv*(F(:,j) - Fbar);
+        if(T_F(j) < UCL)
+         Fnew(:,q)=F(:,j);
+         q=q+1;
+        end
+    end
+    
+    ii=ii+1;
+    
+    figure(230+ii)
+    plot(T_F(1:L))
+    hold on
+    title('Round 3 - T^2 Chart for alpha = 0.005')
+    xlabel('Data Index')
+    ylabel('T2 Statisitc')
+    xL = get(gca,'XLim');
+    line(xL,[UCL UCL],'Color','r');
+    text(m+0.5, UCL, 'UCL');
+    hold off 
+
+    q=q-1;
+    Fbarnew = sum(Fnew,2)/q;
+    Fbar = Fbarnew;
+    
+    L = q
+    F2new = zeros(3);       %recalcualte covariance matrix S
+        for i=1:L
+            F2new = F2new + (Fnew(:,i) - Fbar)*(Fnew(:,i) - Fbar)';
+        end
+    F2new = F2new/(L-1);
+    % disp(Snew)
+    F_cov_inv = inv(F2new);
+    F = Fnew;
+
+end
+
