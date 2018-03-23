@@ -1,4 +1,4 @@
-# statistical_proc_control
+# Statistical Process Control
 
 Date Created: Nov-2016
 
